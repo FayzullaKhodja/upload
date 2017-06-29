@@ -1,5 +1,5 @@
 {
-    "name": "khodja/smsc",
+    "name": "khodja/upload",
     "description": "File upload and thumbnail management package for laravel 5.*",
     "type": "library",
     "require": {
