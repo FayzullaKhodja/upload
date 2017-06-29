@@ -2,51 +2,104 @@
 namespace Khodja\Upload;
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cache;
 
 class Upload
 {
-    private static
-    $alphabet = ['K','h','o','d','j','a', 'p', '_', 'B', 'f', 'S', 'c', 'O', '6', '-', '3', 'R', 'w', 'l', 'A', 'M',  'I', 'J', 'k', 'y', 'E', 'v', '4', '5', '2',  'C',  'H',  'T', 'b', 'W', '7', 'q', 'P', 'U', 's', 'm', 'V', 'Q', '0', 'G', 'n', 'F', 'x', 'e', 't',  'Y', '1', 'u', '8', 'L', 'i', 'z', 'D', 'Z', 'g', 'X', 'N', '9', 'r'],
+    /**
+     * Alphabet for encrypting
+     * 
+     * @var array
+     */
+    private static $alphabet;
 
-    $fliped_alphabet = ['K' => 0, 'h' => 1, 'o' => 2, 'd' => 3, 'j' => 4, 'a' => 5, 'p' => 6, '_' => 7, 'B' => 8, 'f' => 9, 'S' => 10, 'c' => 11, 'O' => 12, 6 => 13, '-' => 14, 3 => 15, 'R' => 16, 'w' => 17, 'l' => 18, 'A' => 19, 'M' => 20, 'I' => 21, 'J' => 22, 'k' => 23, 'y' => 24, 'E' => 25, 'v' => 26, 4 => 27, 5 => 28, 2 => 29, 'C' => 30, 'H' => 31, 'T' => 32, 'b' => 33, 'W' => 34, 7 => 35, 'q' => 36, 'P' => 37, 'U' => 38, 's' => 39, 'm' => 40, 'V' => 41, 'Q' => 42, 0 => 43, 'G' => 44, 'n' => 45, 'F' => 46, 'x' => 47, 'e' => 48, 't' => 49, 'Y' => 50, 1 => 51, 'u' => 52, 8 => 53, 'L' => 54, 'i' => 55, 'z' => 56, 'D' => 57, 'Z' => 58, 'g' => 59, 'X' => 60, 'N' => 61, 9 => 62, 'r' => 63, ];
+    /**
+     * Fliped Alphabet for decrypting
+     * 
+     * @var array
+     */
+    private static $fliped_alphabet;
 
+    /**
+     * Indexes
+     * 
+     * @var array
+     */
     private static $index = [];
-
-    private static function getPathArr($catalog,$id)
+    
+    public function __construct()
     {
-        $encoded=self::encode($id);
-        $path=str_split(str_repeat(self::$alphabet[0], 6-strlen($encoded)).$encoded,2);
+        self::$alphabet = Config::get('upload.alphabet');
+        self::$fliped_alphabet = Cache::get('upload_flipped_alphabet', function () {
+            return array_flip(self::$alphabet);
+        });
+    }
+
+    /**
+     * Get an array of paths
+     * @param  string $catalog
+     * @param  int    $id
+     * 
+     * @return string         
+     */
+    private static function getPathArr($catalog, $id)
+    {
+        $encoded = self::encode($id);
+        $path = str_split(str_repeat(self::$alphabet[0], 6-strlen($encoded)).$encoded,2);
         array_unshift($path, Config::get('upload.main_dir'), $catalog);
+
         return $path;
     }
-  
+
+    /**
+     * Get the path
+     * 
+     * @param  string $catalog
+     * @param  int    $id    
+     *  
+     * @return string         
+     */
     public static function getPath($catalog, $id)
     {
         return '/'.implode('/', self::getPathArr($catalog,$id));
     }
 
+     /**
+     * Encoding identifier
+     * 
+     * @param  string $str
+     * 
+     * @return string
+     */
     private static function encode($int)
     {
         $val = '';
         $len = 64;
         $mod = 0;
 
-        while($int>0)
+        while ($int>0)
         {
-            $mod=$int-floor($int/$len)*$len;
-            $int=($int-$mod)/$len;
-            $val=self::$alphabet[$mod].$val;
+            $mod = $int-floor($int/$len)*$len;
+            $int = ($int-$mod)/$len;
+            $val = self::$alphabet[$mod].$val;
         }
 
         return $val;
     }
 
+    /**
+     * Decoding identifier
+     * 
+     * @param  string $str
+     * 
+     * @return string
+     */
     private static function decode($str)
     {
-        $val=0;
-        foreach(array_reverse(str_split($str)) as $ind=>$char)
+        $val = 0;
+        foreach (array_reverse(str_split($str)) as $ind=>$char)
         {
-            if(isset(self::$fliped_alphabet[$char]))
+            if (isset(self::$fliped_alphabet[$char]))
             {
                 $val += self::$fliped_alphabet[$char]*pow(64, $ind);
             }
@@ -54,67 +107,113 @@ class Upload
 
         return $val;
     }
-  
-    public static function getFile($catalog, $id, $filter=null)
+    
+    /**
+     * Get the path to the files
+     * 
+     * @param  string $catalog [description]
+     * @param  int    $id      [description]
+     * 
+     * @return string|null
+     */
+    public static function getFile($catalog, $id)
     {
-        $files = self::getFiles($catalog,$id,$filter);
-        if($files) {
+        $files = self::getFiles($catalog, $id);
+        if ($files)
+        {
             return $files[0];
         }
 
         return null;
     }
 
+    /**
+     * Get the path to the files 
+     * 
+     * @param  string $catalog
+     * @param  int    $id     
+     * @param  array  $filter 
+     * 
+     * @return array 
+     */
     public static function getFiles($catalog, $id, $filter=null)
     {
-        if(isset(self::$index[$catalog.$id])) {
+        if (isset(self::$index[$catalog.$id]))
+        {
             return self::$index[$catalog.$id];
         }
 
-        if(is_array($filter)) {
+        if (is_array($filter))
+        {
             $filter='*.{'.implode(',', $filter).'}';
         }
-        else {
+        else
+        {
             $filter='*';
         }
 
         $files = [];
         $files = glob(public_path().self::getPath($catalog,$id).'/'.$filter, GLOB_BRACE);
 
-        foreach($files as $ind=>$val) {
+        foreach ($files as $ind=>$val)
+        {
             $files[$ind] = str_replace(public_path(), '', $val);
         }
 
         self::$index[$catalog.$id] = $files;
+
         return $files;
     }
 
+    /**
+     * Save files
+     * 
+     * @param  string $catalog
+     * @param  int    $id 
+     * @param  file   $file
+     * @param  array  $options
+     * 
+     * @return string
+     */
     public static function saveFile($catalog, $id, $file, $options = [])
     {
-        //Перед сохранением одного файла удаляю предыдущие версии файлов
+        // Before saving a file, delete the previous versions of the files
         self::removeFiles($catalog,$id);
         $path = public_path().self::getPath($catalog,$id).'/';
         
-        if( !isset($options['name']) ) {
+        if (!isset($options['name']))
+        {
             $options['name'] = time();
         }
 
         $ex = $file->getClientOriginalExtension();
         $file->move($path, $options['name'].'.'.$ex);
+
         return $path.$options['name'].'.'.$ex;
     }
 
+    /**
+     * Save files
+     * 
+     * @param  string $catalog
+     * @param  int    $id 
+     * @param  array  $files
+     * @param  array  $options
+     * 
+     * @return null
+     */
     public static function saveFiles($catalog, $id, $files, $options = [])
     {
         $path = public_path().self::getPath($catalog, $id).'/';
 
-        if(!isset($options['name'])) {
+        if (!isset($options['name']))
+        {
             $options['name'] = time();
         }
 
         $n = count(self::getFiles($catalog,$id));
 
-        foreach($files as $ind=>$file)
+        foreach ($files as $ind=>$file)
         {
             $ex = $file->getClientOriginalExtension();
             $i = $n + ($ind + 1);
@@ -123,13 +222,23 @@ class Upload
         }
     }
 
+    /**
+     * Swap first file with given file
+     * 
+     * @param  string $catalog
+     * @param  int    $id     
+     * @param  int    $i       index of file in the directory
+     * 
+     * @return boolean
+     */
     public static function swapFirst($catalog, $id, $i)
     {
         $files = self::getFiles($catalog, $id);
         $count = count($files);
         $index = $i - 1;
 
-        if($count <= 1 || $i == 1 || !isset($files[$index])) {
+        if ($count <= 1 || $i == 1 || !isset($files[$index]))
+        {
             return false;
         }
 
@@ -144,33 +253,65 @@ class Upload
         return true;
     }
 
+    /**
+     * Get image tag with source
+     * 
+     * @param  string $catalog
+     * @param  int    $id     
+     * @param  string $class  
+     * 
+     * @return string
+     */
     public static function getImage($catalog, $id, $class='')
     {
-        $file = self::getFile($catalog,$id);
-        if($file) {
+        $file = self::getFile($catalog, $id);
+        if ($file)
+        {
             return '<img src="'.$file.'" class="'.$class.'"/>';
         }
 
         return '<div class="no-image"></div>';
     }
 
+    /**
+     * Get thumb image tag
+     * 
+     * @param  string $catalog
+     * @param  int    $id     
+     * @param  string $size   
+     * @param  string $class  
+     * 
+     * @return string
+     */
     public static function getThumbImage($catalog, $id, $size, $class='')
     {
         $file = self::getFile($catalog,$id);
         $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $file);
 
-        if($file) {
-            // $ext = preg_replace('|^.*(\.\w+)$|is', '$1', $file);
+        if ($file)
+        {
             return '<img src="'.Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file.'" alt="" class="'.$class.'"/>';
         }
+
         return '';
     }
 
+    /**
+     * Get all thumb files path
+     * 
+     * @param  string $catalog
+     * @param  int    $id
+     * @param  string $size
+     * 
+     * @return array         
+     */
     public static function getThumbFiles($catalog, $id, $size)
     {
         $files = self::getFiles($catalog,$id);
         $new_files = [];
-        foreach($files as $ind=>$file) {
+
+        foreach ($files as $ind=>$file) 
+        {
             $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $file);
             $new_files[] = Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
         }
@@ -178,37 +319,79 @@ class Upload
         return $new_files;
     }
 
+    /**
+     * Generate path for a thumb image
+     * 
+     * @param  string $catalog
+     * @param  int    $id
+     * @param  string $size 
+     * 
+     * @return boolean|string
+     */
     public static function getThumb($catalog, $id, $size){
         $files = self::getFiles($catalog,$id);
         
-        if($files) {
+        if ($files)
+        {
             return Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$files[0];
         }
 
         return null;
     }
 
+    /**
+     * Whether the files contains a catalog folder
+     * 
+     * @param  string $catalog
+     * @param  int    $id 
+     * 
+     * @return boolean
+     */
     public static function hasFiles($catalog, $id)
     {
-        return count(self::getFiles($catalog,$id))>0;
+        return count(self::getFiles($catalog,$id)) > 0;
     }
 
+    /**
+     * Whether the file contains a catalog folder
+     * 
+     * @param  string $catalog
+     * @param  int    $id 
+     * 
+     * @return boolean
+     */
     public static function hasFile($catalog, $id)
     {
         return self::getFile($catalog,$id) !== null;
     }
 
+    /**
+     * Remove file
+     * @param  string $catalog
+     * @param  int    $id     
+     * 
+     * @return string
+     */
     public static function removeFile($catalog, $id)
     {
         self::removeFiles($catalog, $id);
     }
 
-    public static function removeFiles($catalog, $id, $file_names=null)
+    /**
+     * Remove files
+     * 
+     * @param  string $catalog
+     * @param  int    $id
+     * @param  array  $file_names
+     * 
+     * @return boolean
+     */
+    public static function removeFiles($catalog, $id, $file_names = null)
     {
         $removed = [];
         $files = self::getFiles($catalog,$id);
 
-        if($file_names === null)
+        if ($file_names === null)
         {
             foreach ($files as $file) {
                 unlink(public_path($file));
@@ -217,13 +400,13 @@ class Upload
         else
         {
             $path = self::getPath($catalog, $id);
-            foreach($file_names as $ind=>$file)
+            foreach ($file_names as $ind=>$file)
             {
                 $removed[] = $path.'/'.basename($file);
             }
             $n = 1;
             
-            foreach($files as $key=>$file)
+            foreach ($files as $key=>$file)
             {
                 if(in_array($file, $removed))
                 {
@@ -231,7 +414,7 @@ class Upload
                 }
                 else
                 {
-                    // Don't rename the file if exists it already has with that name
+                    // Don't rename the file if it exists with this name
                     if(($key + 1) != $n) 
                     {
                         $file = public_path($file);
@@ -241,7 +424,6 @@ class Upload
                     $n++;
                 }
             }
-            
         }
 
         // Remove all thumb images
@@ -250,7 +432,7 @@ class Upload
             foreach (self::getThumbFiles($catalog, $id, $dir) as $file)
             {
                 $file = public_path($file);
-                if(file_exists($file))
+                if (file_exists($file))
                 {
                     unlink($file);
                 }
@@ -258,8 +440,6 @@ class Upload
         }
 
         return true;
-        
     }
-
 
 }
