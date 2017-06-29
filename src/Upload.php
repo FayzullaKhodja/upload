@@ -1,6 +1,8 @@
 <?php
 namespace Khodja\Upload;
 
+use Illuminate\Support\Facades\Config;
+
 class Upload
 {
     private static
@@ -14,11 +16,11 @@ class Upload
     {
         $encoded=self::encode($id);
         $path=str_split(str_repeat(self::$alphabet[0], 6-strlen($encoded)).$encoded,2);
-        array_unshift($path, 'uploads', $catalog);
+        array_unshift($path, Config::get('upload.main_dir'), $catalog);
         return $path;
     }
   
-    public static function getPath($catalog,$id)
+    public static function getPath($catalog, $id)
     {
         return '/'.implode('/', self::getPathArr($catalog,$id));
     }
@@ -76,14 +78,14 @@ class Upload
             $filter='*';
         }
 
-        $files=[];
-        $files=glob(public_path().self::getPath($catalog,$id).'/'.$filter,GLOB_BRACE);
+        $files = [];
+        $files = glob(public_path().self::getPath($catalog,$id).'/'.$filter, GLOB_BRACE);
 
         foreach($files as $ind=>$val) {
             $files[$ind] = str_replace(public_path(), '', $val);
         }
 
-        self::$index[$catalog.$id]=$files;
+        self::$index[$catalog.$id] = $files;
         return $files;
     }
 
@@ -142,7 +144,7 @@ class Upload
         return true;
     }
 
-    public static function getImage($catalog,$id,$class='')
+    public static function getImage($catalog, $id, $class='')
     {
         $file = self::getFile($catalog,$id);
         if($file) {
@@ -152,14 +154,14 @@ class Upload
         return '<div class="no-image"></div>';
     }
 
-    public static function getThumbImage($catalog, $id, $size,$class='')
+    public static function getThumbImage($catalog, $id, $size, $class='')
     {
         $file = self::getFile($catalog,$id);
-        $file = str_replace('uploads/'.$catalog.'/', '', $file);
+        $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $file);
 
         if($file) {
             // $ext = preg_replace('|^.*(\.\w+)$|is', '$1', $file);
-            return '<img src="/uploads/thumb/'.$catalog.'/'.$size.$file.'" alt="" class="'.$class.'"/>';
+            return '<img src="'.Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file.'" alt="" class="'.$class.'"/>';
         }
         return '';
     }
@@ -169,8 +171,8 @@ class Upload
         $files = self::getFiles($catalog,$id);
         $new_files = [];
         foreach($files as $ind=>$file) {
-            $file = str_replace('uploads/'.$catalog.'/', '', $file);
-            $new_files[] = '/uploads/thumb/'.$catalog.'/'.$size.$file;
+            $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $file);
+            $new_files[] = Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
         }
 
         return $new_files;
@@ -180,71 +182,56 @@ class Upload
         $files = self::getFiles($catalog,$id);
         
         if($files) {
-            return '/uploads/thumb/'.$catalog.'/'.$size.$files[0];
+            return Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$files[0];
         }
 
         return null;
     }
 
-    public static function getImages($catalog,$id,$class='')
-    {
-        $files = self::getFiles($catalog,$id);
-        $res='';
-
-        foreach($files as $ind=>$file) {
-            $res.= '<img src="'.$file.'" class="'.$class.'"/>';
-        }
-
-        return $res;
-    }
-
-    public static function hasFiles($catalog,$id)
+    public static function hasFiles($catalog, $id)
     {
         return count(self::getFiles($catalog,$id))>0;
     }
 
-    public static function hasFile($catalog,$id)
+    public static function hasFile($catalog, $id)
     {
-        return self::getFile($catalog,$id)!==null;
+        return self::getFile($catalog,$id) !== null;
     }
 
-    public static function removeFile($catalog,$id)
+    public static function removeFile($catalog, $id)
     {
         self::removeFiles($catalog, $id);
     }
 
     public static function removeFiles($catalog, $id, $file_names=null)
     {
-        $remove = [];
+        $removed = [];
         $files = self::getFiles($catalog,$id);
 
         if($file_names === null)
         {
-
             foreach ($files as $file) {
-                unlink(public_path().$file);
+                unlink(public_path($file));
             }
         }
         else
         {
             $path = self::getPath($catalog, $id);
-            foreach($file_names as $ind=>$file) {
-                
-                $remove[] = $path.'/'.basename($file);
+            foreach($file_names as $ind=>$file)
+            {
+                $removed[] = $path.'/'.basename($file);
             }
-
             $n = 1;
             
             foreach($files as $key=>$file)
             {
-
-                if(in_array($file, $remove))
+                if(in_array($file, $removed))
                 {
-                    unlink(public_path().$file);
+                    unlink(public_path($file));
                 }
                 else
                 {
-                    // don't rename the file if exsits it already has with that name
+                    // Don't rename the file if exists it already has with that name
                     if(($key + 1) != $n) 
                     {
                         $file = public_path($file);
@@ -257,26 +244,22 @@ class Upload
             
         }
 
-    }
-
-    public static function getImageSize($link,$width,$height)
-    {
-        $path=public_path().$link;
-        list($real_width, $real_height) = getimagesize($path);
-        $w_d=$width/$real_width;
-        $h_d=$height/$real_height;
-        $str='<img src="'.$link.'" ';
-
-        if($w_d<$h_d)
+        // Remove all thumb images
+        foreach (Config::get('upload.image_sizes.'.$catalog) as $dir => $size)
         {
-            $str.="height=\"$height\"";
-        }
-        else
-        {
-            $str.="width=\"$width\"";
+            foreach (self::getThumbFiles($catalog, $id, $dir) as $file)
+            {
+                $file = public_path($file);
+                if(file_exists($file))
+                {
+                    unlink($file);
+                }
+            }
         }
 
-        return $str." />";
+        return true;
+        
     }
+
 
 }

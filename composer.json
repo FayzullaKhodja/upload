@@ -3,7 +3,8 @@
     "description": "File upload and thumbnail management package for laravel 5.*",
     "type": "library",
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=5.4.0",
+        "intervention/image": "~2.3"
     },
     "license": "MIT",
     "authors": [

@@ -13,7 +13,11 @@ class UploadServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        $this->loadRoutesFrom(__DIR__.'/routes.php');
+        
+        $this->publishes([
+            __DIR__.'/config/upload.php' => config_path('upload.php')
+        ]);
     }
 
     /**
@@ -23,6 +27,11 @@ class UploadServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // merge default config
+        $this->mergeConfigFrom(
+            __DIR__.'/config/upload.php',
+            'upload'
+        );
 
         $this->app->singleton('upload', function($app) {
             return new Upload;
