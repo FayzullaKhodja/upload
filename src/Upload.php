@@ -109,7 +109,7 @@ class Upload
     }
     
     /**
-     * Get the path to the files
+     * Get the path to the file
      * 
      * @param  string $catalog [description]
      * @param  int    $id      [description]
