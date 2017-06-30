@@ -166,7 +166,7 @@ class Upload
     }
 
     /**
-     * Save files
+     * Save file
      * 
      * @param  string $catalog
      * @param  int    $id 
@@ -427,7 +427,7 @@ class Upload
         }
 
         // Remove all thumb images
-        foreach (Config::get('upload.image_sizes.'.$catalog) as $dir => $size)
+        foreach (Config::get('upload.image_sizes.'.$catalog, []) as $dir => $size)
         {
             foreach (self::getThumbFiles($catalog, $id, $dir) as $file)
             {
