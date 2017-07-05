@@ -328,12 +328,13 @@ class Upload
      * 
      * @return boolean|string
      */
-    public static function getThumb($catalog, $id, $size){
+    public static function getThumbFile($catalog, $id, $size){
         $files = self::getFiles($catalog,$id);
         
         if ($files)
         {
-            return Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$files[0];
+            $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $files[0]);
+            return Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
         }
 
         return null;

@@ -48,7 +48,7 @@ php artisan vendor:publish --provider="Khodja\Upload\UploadServiceProvider"
 * `getImage($catalog, $id [, $class=''])`: Get image tag with source.
 * `getThumbImage($catalog, $id, $size [, $class=''])`: Get thumb image tag.
 * `getThumbFiles($catalog, $id, $size)`: Get all thumb files path.
-* `getThumb($catalog, $id, $size)`: Generate path for a thumb image.
+* `getThumbFile($catalog, $id, $size)`: Generate path for a thumb image.
 * `hasFile($catalog, $id)`: Whether the file contains a catalog folder.
 * `hasFiles($catalog, $id)`: Whether the files contains a catalog folder.
 * `removeFile($catalog, $id)`: Remove file.
