@@ -313,7 +313,7 @@ class Upload
         foreach ($files as $ind=>$file) 
         {
             $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $file);
-            $new_files[] = Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
+            $new_files[] = '/'.Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
         }
 
         return $new_files;
@@ -334,7 +334,7 @@ class Upload
         if ($files)
         {
             $file = str_replace(Config::get('upload.main_dir').'/'.$catalog.'/', '', $files[0]);
-            return Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
+            return '/'.Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file;
         }
 
         return null;

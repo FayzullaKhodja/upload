@@ -19,7 +19,7 @@ Route::get(Config::get('upload.thumb_dir').'/{catalog}/{size}/{tt}/{ta}/{tm}/{fi
 
     // If the directory does not exist, we create a new one
     if (!is_dir($new_dir)) {
-        mkdir(dirname($new_dir), 0777, true);
+        mkdir($new_dir, 0777, true);
     }
 
     $img = Image::make($original_path)->fit($size[0], $size[1]);
