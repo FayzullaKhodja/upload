@@ -235,20 +235,21 @@ class Upload
     {
         $files = self::getFiles($catalog, $id);
         $count = count($files);
-        $index = $i - 1;
 
-        if ($count <= 1 || $i == 1 || !isset($files[$index]))
+        if ($count <= 1 || $i == 0 || !isset($files[$i]))
         {
             return false;
         }
 
         $file1 = public_path($files[0]);
-        $file2 = public_path($files[$index]);
-        $file2_tmp = public_path($files[$index]).'-tmp';
+        $file2 = public_path($files[$i]);
+        $file2_tmp = public_path($files[$i]).'-tmp';
 
         rename($file1, $file2_tmp);
         rename($file2, $file1);
         rename($file2_tmp, $file2);
+
+        self::removeThumbFiles($catalog, $id);
 
         return true;
     }
@@ -329,7 +330,7 @@ class Upload
      * @return boolean|string
      */
     public static function getThumbFile($catalog, $id, $size){
-        $files = self::getFiles($catalog,$id);
+        $files = self::getFiles($catalog, $id);
         
         if ($files)
         {
@@ -363,7 +364,7 @@ class Upload
      */
     public static function hasFile($catalog, $id)
     {
-        return self::getFile($catalog,$id) !== null;
+        return self::getFile($catalog, $id) !== null;
     }
 
     /**
@@ -427,7 +428,13 @@ class Upload
             }
         }
 
-        // Remove all thumb images
+        self::removeThumbFiles($catalog, $id);
+
+        return true;
+    }
+
+    public static function removeThumbFiles($catalog, $id)
+    {
         foreach (Config::get('upload.image_sizes.'.$catalog, []) as $dir => $size)
         {
             foreach (self::getThumbFiles($catalog, $id, $dir) as $file)
@@ -439,8 +446,6 @@ class Upload
                 }
             }
         }
-
-        return true;
     }
 
 }

@@ -44,11 +44,11 @@ php artisan vendor:publish --provider="Khodja\Upload\UploadServiceProvider"
 * `getFiles($catalog, $id [, $filter])`: Get the path to the files.
 * `saveFile($catalog, $id, $file [, $options])`: Save file.
 * `saveFiles($catalog, $id, $files [, $options])`: Save files.
-* `swapFirst($catalog, $id, $i)`: Swap first file with given file.
+* `swapFirst($catalog, $id, $i)`: Swap the first file with given file by index.
 * `getImage($catalog, $id [, $class=''])`: Get image tag with source.
 * `getThumbImage($catalog, $id, $size [, $class=''])`: Get thumb image tag.
-* `getThumbFiles($catalog, $id, $size)`: Get all thumb files path.
 * `getThumbFile($catalog, $id, $size)`: Generate path for a thumb image.
+* `getThumbFiles($catalog, $id, $size)`: Get all thumb files path.
 * `hasFile($catalog, $id)`: Whether the file contains a catalog folder.
 * `hasFiles($catalog, $id)`: Whether the files contains a catalog folder.
 * `removeFile($catalog, $id)`: Remove file.
