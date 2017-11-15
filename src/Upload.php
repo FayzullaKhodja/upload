@@ -245,13 +245,16 @@ class Upload
         $file2 = public_path($files[$i]);
         $file2_tmp = public_path($files[$i]).'-tmp';
 
-        rename($file1, $file2_tmp);
-        rename($file2, $file1);
-        rename($file2_tmp, $file2);
+        // rename($file1, $file2_tmp);
+        // rename($file2, $file1);
+        // rename($file2_tmp, $file2);
+        if (rename($file1, $file2_tmp) && rename($file2, $file1) && rename($file2_tmp, $file2)) {
+            self::removeThumbFiles($catalog, $id);
+            return true;
+        }
 
-        self::removeThumbFiles($catalog, $id);
+        return false;
 
-        return true;
     }
 
     /**
