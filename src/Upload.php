@@ -294,7 +294,7 @@ class Upload
 
         if ($file)
         {
-            return '<img src="'.Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file.'" alt="" class="'.$class.'"/>';
+            return '<img src="/'.Config::get('upload.thumb_dir').'/'.$catalog.'/'.$size.$file.'" alt="" class="'.$class.'"/>';
         }
 
         return '';
@@ -431,23 +431,84 @@ class Upload
             }
         }
 
+        // Clean folder
+        self::removeEmptyParentFolders(self::getPathArr($catalog, $id), $catalog);
+        // Remove Thumb files
         self::removeThumbFiles($catalog, $id);
 
         return true;
     }
 
+    /**
+     * Remove Thumb images
+     *
+     * @param string $catalog
+     * @param int $id
+     * @return void
+     */
     public static function removeThumbFiles($catalog, $id)
     {
         foreach (Config::get('upload.image_sizes.'.$catalog, []) as $dir => $size)
         {
-            foreach (self::getThumbFiles($catalog, $id, $dir) as $file)
+            $pathArr = null;
+            foreach (self::getThumbFiles($catalog, $id, $dir) as $key => $file)
             {
+                // Get path array
+                if (!$pathArr) {
+                    $pathArr = explode('/', $file);
+                    // Trim array, removing first and last element
+                    $pathArr = array_splice($pathArr, 1, count($pathArr)-2);
+                }
+    
                 $file = public_path($file);
                 if (file_exists($file))
                 {
                     unlink($file);
                 }
             }
+
+            // Remove empty parent folders
+            if ($pathArr) {
+                self::removeEmptyParentFolders($pathArr, $catalog);
+            }
+            
+        }
+    }
+
+    /**
+     * Remove empty parent folders
+     *
+     * @param string $catalog
+     * @param int $id
+     * @return void
+     */
+    public static function removeEmptyParentFolders($pathArr, $catalog)
+    {
+        while($current = array_pop($pathArr)) {
+            // Stop the loop on parent catalog
+            if (
+                $current == $catalog ||
+                !self::removeEmptyFolder($pathArr, $current)
+            ) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Remove empty folder
+     *
+     * @param array $pathArr
+     * @param string $current
+     * @return boolean
+     */
+    public static function removeEmptyFolder($pathArr, $current)
+    {
+        $dir = public_path('/'.implode('/', $pathArr).'/'.$current);
+        if (is_readable($dir) && (count(scandir($dir)) == 2)) {
+            return rmdir($dir);
+        } else {
+            return false;
         }
     }
 
