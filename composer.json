@@ -17,5 +17,14 @@
         "psr-4": {
             "Khodja\\Upload\\": "src/"
         }
+    },
+    "laravel": {
+        "providers": [
+            "Intervention\\Image\\ImageServiceProvider",
+            "Khodja\\Upload\\UploadServiceProvider"
+        ],
+        "aliases": {
+            "Upload": "Khodja\\Upload\\Facades\\Upload"
+        }
     }
 }
