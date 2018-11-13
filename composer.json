@@ -18,13 +18,15 @@
             "Khodja\\Upload\\": "src/"
         }
     },
-    "laravel": {
-        "providers": [
-            "Intervention\\Image\\ImageServiceProvider",
-            "Khodja\\Upload\\UploadServiceProvider"
-        ],
-        "aliases": {
-            "Upload": "Khodja\\Upload\\Facades\\Upload"
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Intervention\\Image\\ImageServiceProvider",
+                "Khodja\\Upload\\UploadServiceProvider"
+            ],
+            "aliases": {
+                "Upload": "Khodja\\Upload\\Facades\\Upload"
+            }
         }
     }
 }
